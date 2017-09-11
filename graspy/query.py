@@ -1,11 +1,16 @@
 import ast
 
-import inflection
+
+SELECTOR_MAPPING = {
+    'class-def': ast.ClassDef
+}
+
+def build_type_selector(value):
+    return lambda node: isinstance(node, SELECTOR_MAPPING.get(value))
 
 def parse_query(query):
-    selectors = [selector.replace("-", "_") for selector in query.split()]
-    return [inflection.camelize(selector, uppercase_first_letter=True)
-            for selector in selectors]
+    # TODO: Break these out more
+    return [build_type_selector(part) for part in query.split()]
 
 def search(code, query):
     tree = ast.parse(code)
@@ -16,7 +21,6 @@ def _search_tree(starting_node, selectors):
     results = []
     selector = selectors[0]
     for node in ast.walk(starting_node):
-        # TODO: query needs to be translated
-        if isinstance(node, getattr(ast, selector)):
+        if selector(node):
             results.append(node)
     return results
